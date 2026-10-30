@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-function loadApp() {
+function loadApp(initialStorage = null, confirmResult = false) {
+  let storedValue = initialStorage;
   const html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
   const script = html.match(/<script>([\s\S]*?)<\/script>/);
   assert.ok(script, 'inline application script must exist');
@@ -18,18 +19,18 @@ function loadApp() {
   const alerts = [];
   const sandbox = {
     document: { getElementById: element, querySelectorAll: () => [] },
-    localStorage: { getItem: () => null, setItem() {} },
+    localStorage: { getItem: () => storedValue, setItem: (_key, value) => { storedValue = value; } },
     crypto: { randomUUID: (() => { let i = 0; return () => 'id-' + (++i); })() },
     alert: message => alerts.push(String(message)),
     prompt: () => null,
-    confirm: () => false,
+    confirm: () => confirmResult,
     window: {},
     Blob, TextEncoder, URL, setTimeout,
     console
   };
   vm.createContext(sandbox);
   vm.runInContext(script[1], sandbox);
-  return { sandbox, element, alerts, read: expression => vm.runInContext(expression, sandbox) };
+  return { sandbox, element, alerts, getStored: () => storedValue, read: expression => vm.runInContext(expression, sandbox) };
 }
 
 test('average unit cost is total capital divided by total quantity', () => {
@@ -37,7 +38,6 @@ test('average unit cost is total capital divided by total quantity', () => {
   app.element('pName').value = 'Product A';
   app.element('pCapital').value = '10000';
   app.element('pStock').value = '10';
-  app.element('pSell').value = '1500';
   app.sandbox.addProduct();
   assert.equal(app.read('db.products[0].buy'), 1000);
   assert.equal(app.read('db.products[0].stock'), 10);
@@ -73,7 +73,6 @@ test('each product keeps its own average cost; stock cannot be oversold', () => 
     app.element('pName').value = name;
     app.element('pCapital').value = capital;
     app.element('pStock').value = stock;
-    app.element('pSell').value = '2000';
     app.sandbox.addProduct();
   }
   assert.equal(app.read('db.products[0].buy'), 1000);
@@ -97,4 +96,53 @@ test('zero quantity and zero-stock product do not produce a positive unit cost',
   app.sandbox.addProduct();
   assert.equal(app.read('db.products[0].buy'), 0);
   assert.equal(app.read('db.products[0].stock'), 0);
+});
+
+
+test('legacy localStorage products and historical sale snapshots remain readable and unchanged', () => {
+  const legacy = {
+    products: [{ id: 'legacy-p', name: 'Legacy Product', buy: 250, sell: 400, stock: 8 }],
+    sales: [{
+      id: 'legacy-s', productId: 'legacy-p', name: 'Legacy Product',
+      qty: 2, price: 400, revenue: 800, cost: 500,
+      transport: 10, delivery: 5, other: 0, expenses: 15,
+      date: '2026-10-30', time: '10:00:00', note: 'legacy record'
+    }]
+  };
+  const app = loadApp(JSON.stringify(legacy));
+  assert.equal(app.read('db.products[0].buy'), 250);
+  assert.equal(app.read('db.products[0].sell'), 400);
+  assert.equal(app.read('db.sales[0].revenue'), 800);
+  assert.equal(app.read('db.sales[0].cost'), 500);
+  assert.equal(app.read('db.sales[0].expenses'), 15);
+  assert.equal(app.read('profit(db.sales[0])'), 285);
+
+  app.sandbox.persist();
+  const saved = JSON.parse(app.getStored());
+  assert.equal(saved.products[0].id, 'legacy-p');
+  assert.equal(saved.sales[0].id, 'legacy-s');
+  assert.equal(saved.sales[0].cost, 500);
+  assert.equal(saved.sales[0].revenue, 800);
+});
+
+test('voiding a sale restores stock and removes its revenue from totals', () => {
+  const app = loadApp(null, true);
+  app.element('pName').value = 'Product A';
+  app.element('pCapital').value = '10000';
+  app.element('pStock').value = '10';
+  app.sandbox.addProduct();
+
+  app.element('saleProduct').value = 'id-1';
+  app.element('saleQty').value = '3';
+  app.element('saleRevenue').value = '4500';
+  app.sandbox.saveSale();
+
+  assert.equal(app.read('db.products[0].stock'), 7);
+  assert.equal(app.read('db.sales.length'), 1);
+  const saleId = app.read('db.sales[0].id');
+  app.sandbox.voidSale(saleId);
+
+  assert.equal(app.read('db.products[0].stock'), 10);
+  assert.equal(app.read('db.sales.length'), 0);
+  assert.equal(app.element('totalRevenue').textContent, '0 ကျပ်');
 });
