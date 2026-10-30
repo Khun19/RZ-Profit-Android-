@@ -39,10 +39,11 @@ jobs:
           APK="app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
           unzip -t "$APK"
-          if command -v apkanalyzer >/dev/null 2>&1; then
-            apkanalyzer manifest application-id "$APK" | tee package-id.txt
-            test "$(cat package-id.txt)" = "com.rz.profit"
-          fi
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          test -x "$AAPT"
+          "$AAPT" dump badging "$APK" | tee apk-badging.txt
+          grep -q "^package: name='com.rz.profit'" apk-badging.txt
+          echo "com.rz.profit" > package-id.txt
           sha256sum "$APK" | tee SHA256SUMS.txt
           {
             echo "source_commit=$GITHUB_SHA"
