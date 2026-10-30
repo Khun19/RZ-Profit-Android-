@@ -10,10 +10,12 @@ Myanmar-language Android stock, sales, expense and profit manager.
 
 ## Features
 
-- Multiple products with separate purchase price, selling price and stock quantity.
-- Sales entry with automatic stock deduction.
+- Multiple products with total purchase capital, total quantity, automatically calculated average unit cost, selling price and stock quantity.
+- Sales entry by sold quantity and total sales revenue, with automatic cost-of-goods and profit calculation using each product's average unit cost.
+- Automatic stock deduction and average-cost inventory valuation.
 - Sale cancellation restores the sold quantity.
-- Transport, delivery and other expenses are included in net profit.
+- Transport, delivery and other expenses are deducted from gross profit to calculate net profit.
+- Existing saved product and sales records remain compatible; historical sale costs are retained.
 - Dashboard totals and daily sales summary.
 - Searchable and date-filtered sales history.
 - CSV export to the Android Downloads folder.
