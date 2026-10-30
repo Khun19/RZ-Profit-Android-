@@ -35,6 +35,8 @@ jobs:
           test -x "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
           "$SDKMANAGER" --install "platforms;android-36" "build-tools;36.0.0"
+      - name: Test inventory and sales calculations
+        run: node --test tests/*.test.cjs
       - name: Build debug APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Validate APK and calculate SHA-256
@@ -50,8 +52,14 @@ jobs:
           grep -q "^package: name='com.rz.profit'" apk-badging.txt
           echo "com.rz.profit" > package-id.txt
           sha256sum "$APK" | tee SHA256SUMS.txt
+          PR_HEAD_SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          PR_BASE_SHA="${{ github.event.pull_request.base.sha || github.event.before || '' }}"
           {
-            echo "source_commit=$GITHUB_SHA"
+            echo "source_commit=$PR_HEAD_SHA"
+            echo "pr_head_sha=$PR_HEAD_SHA"
+            echo "base_sha=$PR_BASE_SHA"
+            echo "build_sha=$GITHUB_SHA"
+            echo "event_name=$GITHUB_EVENT_NAME"
             echo "workflow_run_id=$GITHUB_RUN_ID"
             echo "package_id=com.rz.profit"
             echo "version=1.0.0"
