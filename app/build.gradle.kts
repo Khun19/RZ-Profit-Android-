@@ -4,7 +4,7 @@ android {
     compileSdk = 36
     defaultConfig {
         applicationId = "com.rz.profit"
-        minSdk = 23
+        minSdk = 29
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
