@@ -5,7 +5,7 @@ const vm = require('node:vm');
 
 function loadApp() {
   const html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
-  const script = html.match(/<script>([\\s\\S]*?)<\\/script>/);
+  const script = html.match(/<script>([\s\S]*?)<\/script>/);
   assert.ok(script, 'inline application script must exist');
   const elements = new Map();
   const element = id => {
