@@ -1,8 +1,112 @@
 <!doctype html>
-<html lang="my"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>RZ Profit</title>
+<html lang="my"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#080f1c"><title>RZ Profit</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Myanmar:wght@400;500;600;700&display=swap');
 :root{color-scheme:dark;--bg:#0b1220;--panel:#142139;--line:#2a3b57;--text:#edf3ff;--muted:#9aabc4;--blue:#72adff;--green:#45d6a0;--red:#ff7785;--amber:#ffc56b}*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 10% 0%,#1b3151,transparent 42%),var(--bg);color:var(--text);font:14px Inter,'Noto Sans Myanmar',sans-serif}.shell{max-width:1000px;margin:auto;padding:18px 13px 40px}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.brand{display:flex;gap:12px;align-items:center}.logo{width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#76b4ff,#5edbd0);display:grid;place-items:center;color:#071322;font-weight:900;font-size:20px}.brand h1{font-size:19px;margin:0}.brand p,.muted,.hint{color:var(--muted)}.brand p{font-size:11px;margin:4px 0 0}.tabs,.toolbar,.actions{display:flex;gap:8px;flex-wrap:wrap}.tabs{overflow:auto;margin:10px 0 15px}.tab,.btn{border:1px solid var(--line);border-radius:11px;padding:10px 13px;background:#172943;color:var(--text);font-weight:650}.tab.active,.btn.primary{background:linear-gradient(135deg,#76b4ff,#5edbd0);color:#071322;border:0}.btn.danger{background:#482630;color:#ffb8bf;border-color:#78414b}.btn.small{padding:7px 10px;font-size:11px}.view{display:none}.view.active{display:block}.grid{display:grid;gap:13px}.stats{grid-template-columns:repeat(2,minmax(0,1fr));margin-bottom:14px}.cols{grid-template-columns:1fr}.card{background:linear-gradient(160deg,#17243a,#111b2c);border:1px solid var(--line);border-radius:17px;padding:15px;margin-bottom:13px}.stat-label{color:var(--muted);font-size:12px}.stat-value{font-size:clamp(18px,5vw,24px);font-weight:800;margin-top:9px;overflow-wrap:anywhere}.green{color:var(--green)}.red{color:var(--red)}.blue{color:var(--blue)}.amber{color:var(--amber)}h2{font-size:16px;margin:0 0 14px}.row{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.row:last-child{border:0}label{display:block;color:#b9c8dc;font-size:12px;margin:0 0 6px}.field{margin-bottom:11px}input,select{width:100%;min-width:0;background:#0d1727;border:1px solid #31445f;color:var(--text);border-radius:10px;padding:12px;font:inherit}input:focus,select:focus{outline:1px solid var(--blue)}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.full{width:100%}.hint{font-size:11px;line-height:1.6}.notice{background:#14253b;border:1px solid #39516e;border-radius:11px;padding:11px;margin:10px 0;font-size:12px;line-height:1.6}.item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}.item:last-child{border:0}.item strong{display:block}.item small{display:block;color:var(--muted);margin-top:4px}.toolbar{margin-bottom:12px}.toolbar input{flex:1;min-width:120px}table{border-collapse:collapse;width:100%;min-width:650px}th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line);font-size:11px}th{color:var(--muted)}.tablewrap{overflow:auto}.empty{text-align:center;color:var(--muted);padding:22px}footer{text-align:center;color:#647792;font-size:10px;margin-top:20px}@media(min-width:760px){.stats{grid-template-columns:repeat(4,1fr)}.cols{grid-template-columns:1fr 1fr}.shell{padding:24px}}
+
+/* Mobile-first UI/UX refresh — visual layer only */
+:root{
+  --bg:#080f1c;--panel:#121f33;--line:#2b3d58;--text:#f2f6ff;
+  --muted:#a8b8cf;--blue:#83b8ff;--green:#55dfad;--red:#ff8794;--amber:#ffd083;
+  --radius-card:20px;
+}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(ellipse at 8% -8%,rgba(71,126,190,.24),transparent 38%),
+    radial-gradient(ellipse at 100% 20%,rgba(42,117,133,.10),transparent 32%),
+    var(--bg);
+  line-height:1.55;
+  -webkit-tap-highlight-color:transparent;
+}
+.shell{width:min(100%,1040px);padding:18px 16px calc(34px + env(safe-area-inset-bottom))}
+header{gap:12px;align-items:center;margin-bottom:22px}
+.brand{min-width:0;gap:13px}
+.logo{width:50px;height:50px;flex:0 0 50px;border-radius:17px;box-shadow:0 8px 24px rgba(74,177,211,.18)}
+.brand h1{font-size:clamp(19px,5vw,23px);letter-spacing:-.35px}
+.brand p{font-size:12px;line-height:1.5}
+#today{font-size:12px;white-space:nowrap}
+.tabs{
+  display:flex;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;
+  scrollbar-width:none;gap:9px;margin:0 -16px 18px;padding:2px 16px 8px;
+  scroll-snap-type:x proximity;
+}
+.tabs::-webkit-scrollbar{display:none}
+.tab{
+  flex:0 0 auto;white-space:nowrap;min-height:48px;padding:11px 16px;
+  border-radius:14px;background:rgba(24,42,67,.92);border-color:#30445f;
+  scroll-snap-align:start;font-size:13px;transition:background .18s ease,border-color .18s ease,transform .18s ease;
+}
+.tab.active,.btn.primary{
+  background:linear-gradient(125deg,#80b8ff 0%,#61d8d0 100%);
+  box-shadow:0 7px 18px rgba(87,183,208,.16);
+}
+.grid{gap:12px}
+.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.card{
+  background:linear-gradient(155deg,rgba(24,39,62,.98),rgba(16,27,44,.98));
+  border:1px solid rgba(74,98,130,.55);border-radius:var(--radius-card);
+  padding:16px;margin-bottom:13px;box-shadow:0 8px 24px rgba(0,0,0,.10);
+}
+.stats .card{min-height:126px;display:flex;flex-direction:column;justify-content:space-between}
+.stat-label{font-size:12px;line-height:1.7;letter-spacing:.05px}
+.stat-value{font-size:clamp(17px,4.7vw,23px);line-height:1.35;margin-top:12px;font-variant-numeric:tabular-nums}
+h2{font-size:16px;line-height:1.6;margin:0 0 14px}
+.row{align-items:flex-start;padding:12px 0;font-size:13px;line-height:1.6}
+.row b{font-variant-numeric:tabular-nums;text-align:right}
+label{font-size:13px;line-height:1.65;margin-bottom:7px;color:#c6d3e6}
+.field{margin-bottom:14px}
+input,select{
+  min-height:48px;padding:12px 13px;border-radius:13px;background:#0b1627;
+  border-color:#354b69;font-size:14px;line-height:1.5;
+}
+input::placeholder{color:#71839d;opacity:1}
+input:focus,select:focus{outline:2px solid rgba(131,184,255,.72);outline-offset:1px;border-color:transparent}
+.btn{
+  min-height:44px;padding:10px 14px;border-radius:13px;font-size:13px;
+  border-color:#354b69;transition:filter .18s ease,transform .18s ease;
+}
+.btn.small{min-height:38px;padding:8px 11px;font-size:12px}
+.btn.danger{background:rgba(112,43,58,.34);border-color:#784653;color:#ffc1c8}
+.btn:active,.tab:active{transform:scale(.98)}
+.notice{border-radius:14px;padding:14px;font-size:13px;line-height:1.85;background:rgba(23,48,72,.72);border-color:#3b5879}
+.item{gap:12px;padding:14px 0;align-items:center}
+.item>div:first-child{min-width:0}
+.item strong{font-size:14px;line-height:1.6;overflow-wrap:anywhere}
+.item small{font-size:12px;line-height:1.7}
+.actions{flex:0 0 auto;gap:6px}
+.toolbar{gap:8px}
+.toolbar input{flex:1 1 140px}
+.tablewrap{border-radius:12px}
+.empty{font-size:13px;line-height:1.7}
+footer{font-size:11px;line-height:1.7;padding:0 8px}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+@media(max-width:380px){
+  .shell{padding-left:12px;padding-right:12px}
+  .tabs{margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px}
+  .stats{gap:9px}
+  .card{padding:13px;border-radius:17px}
+  .stats .card{min-height:116px}
+  .stat-label{font-size:11px}
+  .stat-value{font-size:17px}
+  .tab{padding:10px 13px;font-size:12px}
+  .brand p{font-size:10px}
+}
+@media(min-width:760px){
+  .shell{padding:26px 24px 42px}
+  .tabs{margin-left:0;margin-right:0;padding-left:0;padding-right:0;overflow:visible}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+  .stats .card{min-height:140px;padding:19px}
+  .card{padding:20px}
+  .stat-label{font-size:13px}
+}
+@media(min-width:1050px){
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
+
 </style></head><body><main class="shell">
 <header><div class="brand"><div class="logo">RZ</div><div><h1>RZ Profit</h1><p>အရောင်း · ကုန်ပစ္စည်း · အမြတ် စီမံခန့်ခွဲမှု</p></div></div><span id="today" class="muted"></span></header>
 <nav class="tabs"><button class="tab active" data-tab="dashboard">ခြုံငုံမြင်ကွင်း</button><button class="tab" data-tab="sales">အရောင်းသွင်းရန်</button><button class="tab" data-tab="products">ပစ္စည်းစာရင်း</button><button class="tab" data-tab="history">အရောင်းမှတ်တမ်း</button></nav>

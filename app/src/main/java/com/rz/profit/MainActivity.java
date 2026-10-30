@@ -1,6 +1,9 @@
 package com.rz.profit;
 
 import android.app.Activity;
+import android.graphics.Color;
+import android.view.Window;
+import android.view.WindowInsets;
 import android.os.Bundle;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -20,8 +23,37 @@ public class MainActivity extends Activity {
     private WebView webView;
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
+        Window window = getWindow();
+        window.setStatusBarColor(Color.rgb(8, 15, 28));
+        window.setNavigationBarColor(Color.rgb(8, 15, 28));
+        window.getDecorView().setSystemUiVisibility(0);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.setStatusBarContrastEnforced(false);
+            window.setNavigationBarContrastEnforced(false);
+        }
+
         webView = new WebView(this);
+        webView.setBackgroundColor(Color.rgb(8, 15, 28));
+        webView.setOnApplyWindowInsetsListener((view, insets) -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                android.graphics.Insets bars = insets.getInsets(
+                    WindowInsets.Type.statusBars()
+                        | WindowInsets.Type.navigationBars()
+                        | WindowInsets.Type.displayCutout()
+                );
+                view.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+            } else {
+                view.setPadding(
+                    insets.getSystemWindowInsetLeft(),
+                    insets.getSystemWindowInsetTop(),
+                    insets.getSystemWindowInsetRight(),
+                    insets.getSystemWindowInsetBottom()
+                );
+            }
+            return insets;
+        });
         setContentView(webView);
+        getWindow().setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.getSettings().setDomStorageEnabled(true);
         webView.getSettings().setAllowFileAccess(true);
