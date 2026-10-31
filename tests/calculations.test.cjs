@@ -204,5 +204,5 @@ test('legacy sales without payment metadata are not incorrectly counted as new d
   const legacy = { products: [], sales: [{ id: 'old', name: 'Old', revenue: 800, cost: 500, expenses: 0, date: '2026-10-30', qty: 2 }] };
   const app = loadApp(JSON.stringify(legacy));
   assert.equal(app.read('db.expenses.length'), 0);
-  assert.equal(app.read('due(db.sales[0])'), 0);
+  assert.equal(app.element('debtTotal').textContent, '0 ကျပ်');
 });
