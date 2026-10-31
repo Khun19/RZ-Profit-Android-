@@ -166,7 +166,7 @@ load();$('today').textContent=today();render();
     const debt=db.sales.reduce((a,s)=>a+due(s),0);
     const cash=db.sales.reduce((a,s)=>a+(s.payments||[]).filter(p=>p.method==='cash').reduce((x,p)=>x+p.amount,0),0);
     const mobile=db.sales.reduce((a,s)=>a+(s.payments||[]).filter(p=>p.method==='mobile').reduce((x,p)=>x+p.amount,0),0);
-    const net=todaySales.reduce((a,s)=>a+profit(s),0)-dayOther;
+    const net=todaySales.reduce((a,s)=>a+profit(s),0)-dayOther;const allOther=db.expenses.reduce((a,e)=>a+e.amount,0);$('totalProfit').textContent=money(db.sales.reduce((a,s)=>a+profit(s),0)-allOther);$('totalProfit').className=db.sales.reduce((a,s)=>a+profit(s),0)-allOther<0?'stat-value red':'stat-value green';$('todayProfit').textContent=money(net);$('todayProfit').className=net<0?'red':'green';$('todayExpense').textContent=money(todaySales.reduce((a,s)=>a+s.expenses,0)+dayOther);
     $('todayRevenueCard').textContent=money(todaySales.reduce((a,s)=>a+s.revenue,0));
     $('todayNetCard').textContent=money(net);$('todayExpenseCard').textContent=money(todaySales.reduce((a,s)=>a+s.expenses,0)+dayOther);
     $('debtTotal').textContent=money(debt);$('cashReceived').textContent=money(cash);$('mobileReceived').textContent=money(mobile);
