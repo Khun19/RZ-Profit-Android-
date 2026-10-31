@@ -15,8 +15,8 @@ Myanmar-language Android stock, sales, expense and profit manager.
 - Automatic stock deduction and average-cost inventory valuation.
 - Sale cancellation restores the sold quantity.
 - Transport, delivery and other expenses are deducted from gross profit to calculate net profit.
-- Existing saved product and sales records remain compatible; historical sale costs are retained.
-- Dashboard totals and daily sales summary.
+- Existing saved product and sales records remain compatible; historical sale costs are retained. Legacy sales without payment metadata are not treated as new debts; their historical payment method remains unclassified.
+- Dashboard totals for revenue, cost of goods, gross profit, net profit, stock valuation, low-stock products and best sellers.\n- Cash and mobile-payment tracking with partial payments and customer outstanding balances.\n- Standalone business-expense records and daily, weekly and monthly net-profit summaries.\n- CSV sales export includes recorded payments and outstanding balances.
 - Searchable and date-filtered sales history.
 - CSV export to the Android Downloads folder.
 - Portrait Android WebView application.
