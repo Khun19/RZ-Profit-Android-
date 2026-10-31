@@ -195,8 +195,11 @@ load();$('today').textContent=today();render();
   window.saveExpense=function(){const title=$('expenseTitle').value.trim(),amount=Number($('expenseAmount').value),date=$('expenseDate').value||today();if(!title)return alert('အသုံးစရိတ်အမျိုးအစား ထည့်ပါ။');if(!Number.isFinite(amount)||amount<=0)return alert('ပမာဏ မှန်ကန်စွာထည့်ပါ။');db.expenses.push({id:crypto.randomUUID(),title,amount,date,method:$('expenseMethod').value,note:$('expenseNote').value.trim()});$('expenseTitle').value='';$('expenseAmount').value='';$('expenseNote').value='';persist()};
 
   window.exportCsvFinance=function(){
-    const rows=[['Date','Time','Product','Quantity','Revenue','Cost of goods','Sale expenses','Net profit before standalone expenses','Paid amount','Outstanding','Payment methods','Customer','Note'],...db.sales.map(s=>[s.date,s.time,s.name,s.qty,s.revenue,s.cost,s.expenses,profit(s),paid(s),due(s),(s.payments||[]).map(p=>p.method+':'+p.amount).join(';'),s.customer||'',s.note||''])];
-    const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n'),name='rz-profit-sales-'+today()+'.csv';
+    const header=['Record type','Date','Time','Description','Quantity','Revenue','Cost of goods','Sale expenses','Standalone expense','Paid amount','Outstanding','Payment details','Customer','Note'];
+    const sales=db.sales.map(s=>['Sale',s.date,s.time,s.name,s.qty,s.revenue,s.cost,s.expenses,0,paid(s),due(s),(s.payments||[]).map(p=>p.method+':'+p.amount+'@'+p.date+' '+p.time).join(';'),s.customer||'',s.note||'']);
+    const expensesRows=db.expenses.map(e=>['Expense',e.date,'',e.title,'',0,0,0,e.amount,'','',e.method||'', '',e.note||'']);
+    const rows=[header,...sales,...expensesRows];
+    const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n'),name='rz-profit-ledger-'+today()+'.csv';
     if(window.Android&&window.Android.saveCsv){const bytes=new TextEncoder().encode(csv);let binary='';bytes.forEach(b=>binary+=String.fromCharCode(b));window.Android.saveCsv(btoa(binary),name);return}
     const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
   };
