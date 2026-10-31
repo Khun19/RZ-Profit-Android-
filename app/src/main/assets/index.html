@@ -127,7 +127,7 @@ footer{font-size:11px;line-height:1.7;padding:0 8px}
 <div class="row"><span>ယနေ့</span><b id="reportDay">0 ကျပ်</b></div>
 <div class="row"><span>ယခုအပတ်</span><b id="reportWeek">0 ကျပ်</b></div>
 <div class="row"><span>ယခုလ</span><b id="reportMonth">0 ကျပ်</b></div></div>
-<div class="cols grid"><div class="card"><h2>Stock နည်းနေသော ပစ္စည်းများ</h2><div id="lowStockList"></div></div><div class="card"><h2>အရောင်းအကောင်းဆုံး ပစ္စည်းများ</h2><div id="bestSellerList"></div></div></div>
+<div class="cols grid"><div class="card"><h2>Stock နည်းနေသော ပစ္စည်းများ</h2><div id="lowStockList"></div></div><div class="card"><h2>အရောင်းအကောင်းဆုံး ပစ္စည်းများ</h2><div id="bestSellerList"></div></div></div><div class="card"><h2>အကြွေးကျန်စာရင်း</h2><div id="outstandingList"></div></div>
 <section id="expenses" class="view"><div class="card"><h2>လုပ်ငန်းအသုံးစရိတ် အသစ်</h2>
 <div class="field"><label>အသုံးစရိတ်အမျိုးအစား</label><input id="expenseTitle" maxlength="70" placeholder="ဆိုင်ခန်းခ၊ မီးဖိုး၊ လစာ"></div>
 <div class="formgrid"><div class="field"><label>ပမာဏ</label><input id="expenseAmount" type="number" min="0.01" step="any" placeholder="0"></div><div class="field"><label>ငွေပေးချေမှုနည်းလမ်း</label><select id="expenseMethod"><option value="cash">Cash / ငွေသား</option><option value="mobile">Mobile Payment</option></select></div></div>
@@ -178,6 +178,7 @@ load();$('today').textContent=today();render();
     $('lowStockList').innerHTML=low.length?low.map(p=>'<div class="row"><span>'+esc(p.name)+'</span><b class="amber">'+p.stock+' ခု</b></div>').join(''):'<div class="empty">Stock နည်းနေသော ပစ္စည်းမရှိပါ။</div>';
     const best={};db.sales.forEach(s=>best[s.name]=(best[s.name]||0)+s.qty);const leaders=Object.entries(best).sort((a,b)=>b[1]-a[1]).slice(0,5);
     $('bestSellerList').innerHTML=leaders.length?leaders.map(x=>'<div class="row"><span>'+esc(x[0])+'</span><b>'+x[1]+' ခု</b></div>').join(''):'<div class="empty">အရောင်းမှတ်တမ်း မရှိသေးပါ။</div>';
+    const debts=db.sales.filter(s=>due(s)>0);$('outstandingList').innerHTML=debts.length?debts.map(s=>'<div class="item"><div><strong>'+esc(s.customer||s.name)+'</strong><small>'+esc(s.name)+' · '+esc(s.date)+' · ရရန် '+money(due(s))+'</small></div><button class="btn small" onclick="receivePayment(\\''+s.id+'\\')">ငွေလက်ခံ</button></div>').join(''):'<div class="empty">အကြွေးကျန် မရှိပါ။</div>';
     renderExpenses();
   }
   function renderExpenses(){const el=$('expenseList');if(!el)return;el.innerHTML=db.expenses.slice().reverse().map(e=>'<div class="item"><div><strong>'+esc(e.title)+'</strong><small>'+esc(e.date)+' · '+methodName(e.method)+'</small></div><b class="red">'+money(e.amount)+'</b></div>').join('')||'<div class="empty">အသုံးစရိတ် မရှိသေးပါ။</div>'}
@@ -186,7 +187,7 @@ load();$('today').textContent=today();render();
     const p=db.products.find(x=>x.id===$('saleProduct').value),rawQty=$('saleQty').value,q=qty(rawQty),rawRevenue=$('saleRevenue').value,rev=rawRevenue===''?NaN:Number(rawRevenue),rawPaid=$('salePaid').value,paidNow=rawPaid===''?rev:Number(rawPaid);
     if(!p)return alert('ပစ္စည်းရွေးချယ်ပါ။');if(rawQty===''||!Number.isInteger(Number(rawQty))||q<1||q>p.stock)return alert('အရေအတွက်သည် လက်ကျန်နှင့် ကိုက်ညီရမည်。');
     if(!Number.isFinite(rev)||rev<=0)return alert('ရောင်းဈေး မှန်ကန်စွာထည့်ပါ။');if(!Number.isFinite(paidNow)||paidNow<0||paidNow>rev)return alert('လက်ခံရရှိငွေကို ၀ မှ ရောင်းရငွေအထိ ထည့်ပါ။');
-    const now=new Date(),method=$('paymentMethod').value,ps=paidNow>0?[{amount:paidNow,method,date:today(),time:now.toLocaleTimeString('en-GB')}]:[];
+    const now=new Date(),method=$('paymentMethod').value||'cash',ps=paidNow>0?[{amount:paidNow,method,date:today(),time:now.toLocaleTimeString('en-GB')}]:[];
     db.sales.push({id:crypto.randomUUID(),productId:p.id,name:p.name,qty:q,price:rev/q,revenue:rev,cost:q*p.buy,transport:n('transport'),delivery:n('delivery'),other:n('otherExpense'),expenses:expenses(),date:today(),time:now.toLocaleTimeString('en-GB'),customer:$('saleCustomer').value.trim(),payments:ps,paidAmount:paidNow,note:$('saleNote').value.trim()});
     p.stock-=q;$('saleQty').value=1;$('saleRevenue').value='';$('salePaid').value='';$('saleCustomer').value='';['transport','delivery','otherExpense'].forEach(x=>$(x).value=0);$('saleNote').value='';persist();alert('အရောင်းမှတ်တမ်း သိမ်းဆည်းပြီးပါပြီ။');
   };
