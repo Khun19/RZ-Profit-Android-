@@ -19,7 +19,7 @@ Myanmar-language Android stock, sales, expense and profit manager.
 - Dashboard totals for revenue, cost of goods, gross profit, net profit, stock valuation, low-stock products and best sellers.
 - Cash and mobile-payment tracking with partial payments and customer outstanding balances.
 - Standalone business-expense records and daily, weekly and monthly net-profit summaries.
-- CSV sales export includes recorded payments and outstanding balances.
+- CSV ledger export includes sales, recorded payments, outstanding balances and standalone expenses.
 - Searchable and date-filtered sales history.
 - CSV export to the Android Downloads folder.
 - Portrait Android WebView application.
