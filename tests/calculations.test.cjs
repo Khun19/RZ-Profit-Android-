@@ -32,7 +32,7 @@ function loadApp(initialStorage = null, confirmResult = false, promptValues = []
   vm.createContext(sandbox);
   const scripts = html.split('<script>').slice(1).map(part => part.split('</script>')[0]);
   assert.ok(scripts.length >= 2, 'finance extension script must exist');
-  for (const item of scripts) vm.runInContext(item[1], sandbox);
+  for (const item of scripts) vm.runInContext(item, sandbox);
   return { sandbox, element, alerts, getStored: () => storedValue, read: expression => vm.runInContext(expression, sandbox) };
 }
 
