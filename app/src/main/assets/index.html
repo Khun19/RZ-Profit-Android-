@@ -193,7 +193,14 @@ load();$('today').textContent=today();render();
   };
   window.receivePayment=function(id){const s=db.sales.find(x=>x.id===id);if(!s)return;const left=due(s),raw=prompt('ရရန်ကျန် '+money(left)+' — လက်ခံငွေပမာဏထည့်ပါ',String(left));if(raw===null)return;const amount=Number(raw);if(!Number.isFinite(amount)||amount<=0||amount>left)return alert('ငွေပမာဏ မှားယွင်းနေသည်။');const method=prompt('cash သို့မဟုတ် mobile','cash');if(method===null)return;if(!['cash','mobile'].includes(method.toLowerCase()))return alert('cash သို့မဟုတ် mobile ကိုသာ ရွေးပါ။');if(!Array.isArray(s.payments))s.payments=[];s.payments.push({amount,method:method.toLowerCase(),date:today(),time:new Date().toLocaleTimeString('en-GB')});s.paidAmount=paid(s);persist()};
   window.saveExpense=function(){const title=$('expenseTitle').value.trim(),amount=Number($('expenseAmount').value),date=$('expenseDate').value||today();if(!title)return alert('အသုံးစရိတ်အမျိုးအစား ထည့်ပါ။');if(!Number.isFinite(amount)||amount<=0)return alert('ပမာဏ မှန်ကန်စွာထည့်ပါ။');db.expenses.push({id:crypto.randomUUID(),title,amount,date,method:$('expenseMethod').value,note:$('expenseNote').value.trim()});$('expenseTitle').value='';$('expenseAmount').value='';$('expenseNote').value='';persist()};
-  $('saveSale').onclick=window.saveSale;$('saveExpense').onclick=window.saveExpense;$('expenseDate').value=today();
+
+  window.exportCsvFinance=function(){
+    const rows=[['Date','Time','Product','Quantity','Revenue','Cost of goods','Sale expenses','Net profit before standalone expenses','Paid amount','Outstanding','Payment methods','Customer','Note'],...db.sales.map(s=>[s.date,s.time,s.name,s.qty,s.revenue,s.cost,s.expenses,profit(s),paid(s),due(s),(s.payments||[]).map(p=>p.method+':'+p.amount).join(';'),s.customer||'',s.note||''])];
+    const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n'),name='rz-profit-sales-'+today()+'.csv';
+    if(window.Android&&window.Android.saveCsv){const bytes=new TextEncoder().encode(csv);let binary='';bytes.forEach(b=>binary+=String.fromCharCode(b));window.Android.saveCsv(btoa(binary),name);return}
+    const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  };
+  $('saveSale').onclick=window.saveSale;$('saveExpense').onclick=window.saveExpense;$('exportCsv').onclick=window.exportCsvFinance;$('expenseDate').value=today();
   const oldHistory=window.history; // Preserve browser history object; payment collection is exposed in sales list below.
   const oldRender=render;window.render=function(){oldRender();refreshFinance()};
   document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.tab==='expenses')refreshFinance()}));
