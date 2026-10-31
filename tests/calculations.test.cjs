@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-function loadApp(initialStorage = null, confirmResult = false) {
+function loadApp(initialStorage = null, confirmResult = false, promptValues = []) {
   let storedValue = initialStorage;
   const html = fs.readFileSync('app/src/main/assets/index.html', 'utf8');
   const script = html.match(/<script>([\s\S]*?)<\/script>/);
@@ -22,14 +22,17 @@ function loadApp(initialStorage = null, confirmResult = false) {
     localStorage: { getItem: () => storedValue, setItem: (_key, value) => { storedValue = value; } },
     crypto: { randomUUID: (() => { let i = 0; return () => 'id-' + (++i); })() },
     alert: message => alerts.push(String(message)),
-    prompt: () => null,
+    prompt: () => promptValues.length ? promptValues.shift() : null,
     confirm: () => confirmResult,
-    window: {},
+    window: null,
     Blob, TextEncoder, URL, setTimeout,
     console
   };
+  sandbox.window = sandbox;
   vm.createContext(sandbox);
-  vm.runInContext(script[1], sandbox);
+  const scripts = [...html.matchAll(/<script>([\\s\\S]*?)<\\/script>/g)];
+  assert.ok(scripts.length >= 2, 'finance extension script must exist');
+  for (const item of scripts) vm.runInContext(item[1], sandbox);
   return { sandbox, element, alerts, getStored: () => storedValue, read: expression => vm.runInContext(expression, sandbox) };
 }
 
@@ -145,4 +148,61 @@ test('voiding a sale restores stock and removes its revenue from totals', () => 
   assert.equal(app.read('db.products[0].stock'), 10);
   assert.equal(app.read('db.sales.length'), 0);
   assert.equal(app.element('totalRevenue').textContent, '0 ကျပ်');
+});
+
+
+test('new sales record separates revenue from cash received and records partial payment', () => {
+  const app = loadApp();
+  app.element('pName').value = 'Debt Product';
+  app.element('pCapital').value = '5000';
+  app.element('pStock').value = '10';
+  app.sandbox.addProduct();
+  app.element('saleProduct').value = 'id-1';
+  app.element('saleQty').value = '2';
+  app.element('saleRevenue').value = '4000';
+  app.element('salePaid').value = '1500';
+  app.element('paymentMethod').value = 'mobile';
+  app.sandbox.saveSale();
+  assert.equal(app.read('db.sales[0].revenue'), 4000);
+  assert.equal(app.read('db.sales[0].paidAmount'), 1500);
+  assert.equal(app.read('db.sales[0].payments[0].method'), 'mobile');
+  assert.equal(app.read('db.sales[0].revenue - db.sales[0].paidAmount'), 2500);
+  assert.equal(app.read('db.products[0].stock'), 8);
+});
+
+test('receiving a partial debt payment reduces outstanding balance without changing revenue', () => {
+  const app = loadApp(null, false, ['1000', 'cash']);
+  app.element('pName').value = 'Debt Product';
+  app.element('pCapital').value = '5000';
+  app.element('pStock').value = '10';
+  app.sandbox.addProduct();
+  app.element('saleProduct').value = 'id-1';
+  app.element('saleQty').value = '1';
+  app.element('saleRevenue').value = '3000';
+  app.element('salePaid').value = '500';
+  app.sandbox.saveSale();
+  const id = app.read('db.sales[0].id');
+  app.sandbox.receivePayment(id);
+  assert.equal(app.read('db.sales[0].revenue'), 3000);
+  assert.equal(app.read('db.sales[0].paidAmount'), 1500);
+  assert.equal(app.read('db.sales[0].revenue - db.sales[0].paidAmount'), 1500);
+});
+
+test('standalone business expenses are persisted separately from sales revenue', () => {
+  const app = loadApp();
+  app.element('expenseTitle').value = 'Shop rent';
+  app.element('expenseAmount').value = '25000';
+  app.element('expenseMethod').value = 'cash';
+  app.element('expenseDate').value = '2026-10-31';
+  app.sandbox.saveExpense();
+  assert.equal(app.read('db.expenses.length'), 1);
+  assert.equal(app.read('db.expenses[0].amount'), 25000);
+  assert.equal(app.read('db.sales.length'), 0);
+});
+
+test('legacy sales without payment metadata are not incorrectly counted as new debt', () => {
+  const legacy = { products: [], sales: [{ id: 'old', name: 'Old', revenue: 800, cost: 500, expenses: 0, date: '2026-10-30', qty: 2 }] };
+  const app = loadApp(JSON.stringify(legacy));
+  assert.equal(app.read('db.expenses.length'), 0);
+  assert.equal(app.read('due(db.sales[0])'), 0);
 });
