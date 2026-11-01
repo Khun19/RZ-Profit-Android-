@@ -13,7 +13,7 @@ Myanmar-language Android stock, sales, expense and profit manager.
 - Multiple products with total purchase capital, total quantity, automatically calculated average unit cost, selling price and stock quantity.
 - Sales entry by sold quantity and total sales revenue, with automatic cost-of-goods and profit calculation using each product's average unit cost.
 - Automatic stock deduction and average-cost inventory valuation.
-- Sale cancellation restores the sold quantity.
+- Cancelling an unpaid sale restores the sold quantity; sales with recorded payments cannot be voided directly.
 - Transport, delivery and other expenses are deducted from gross profit to calculate net profit.
 - Existing saved product and sales records remain compatible; historical sale costs are retained. Legacy sales without payment metadata are not treated as new debts; their historical payment method remains unclassified.
 - Dashboard totals for revenue, cost of goods, gross profit, net profit, stock valuation, low-stock products and best sellers.
