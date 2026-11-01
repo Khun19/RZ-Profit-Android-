@@ -138,6 +138,7 @@ test('voiding a sale restores stock and removes its revenue from totals', () => 
   app.element('saleProduct').value = 'id-1';
   app.element('saleQty').value = '3';
   app.element('saleRevenue').value = '4500';
+  app.element('salePaid').value = '0';
   app.sandbox.saveSale();
 
   assert.equal(app.read('db.products[0].stock'), 7);
