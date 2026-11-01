@@ -206,3 +206,31 @@ test('legacy sales without payment metadata are not incorrectly counted as new d
   assert.equal(app.read('db.expenses.length'), 0);
   assert.equal(app.element('debtTotal').textContent, '0 ကျပ်');
 });
+
+
+test('fully paid and partially paid sales cannot be voided without a refund record', () => {
+  for (const scenario of [
+    { paid: '3000', method: 'cash', expectedDue: '0 ကျပ်', expectedCash: '3,000 ကျပ်' },
+    { paid: '1000', method: 'mobile', expectedDue: '2,000 ကျပ်', expectedCash: '0 ကျပ်' }
+  ]) {
+    const app = loadApp();
+    app.element('pName').value = 'Paid Product';
+    app.element('pCapital').value = '5000';
+    app.element('pStock').value = '5';
+    app.sandbox.addProduct();
+    app.element('saleProduct').value = 'id-1';
+    app.element('saleQty').value = '1';
+    app.element('saleRevenue').value = '3000';
+    app.element('salePaid').value = scenario.paid;
+    app.element('paymentMethod').value = scenario.method;
+    app.sandbox.saveSale();
+    const saleId = app.read('db.sales[0].id');
+    app.sandbox.voidSale(saleId);
+    assert.equal(app.read('db.sales.length'), 1);
+    assert.equal(app.read('db.products[0].stock'), 4);
+    assert.equal(app.element('debtTotal').textContent, scenario.expectedDue);
+    assert.equal(app.element('cashReceived').textContent, scenario.expectedCash);
+    assert.equal(app.element('mobileReceived').textContent, scenario.method === 'mobile' ? '1,000 ကျပ်' : '0 ကျပ်');
+    assert.match(app.alerts.at(-1), /ငွေလက်ခံထားသော အရောင်း/);
+  }
+});
