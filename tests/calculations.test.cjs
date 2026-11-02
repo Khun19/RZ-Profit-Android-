@@ -85,6 +85,7 @@ test('each product keeps its own average cost; stock cannot be oversold', () => 
   app.element('saleProduct').value = 'id-2';
   app.element('saleQty').value = '5';
   app.element('saleRevenue').value = '10000';
+  app.setFixedPrice(1500);
   app.sandbox.window.saveSale();
   assert.equal(app.read('db.sales.length'), 0);
   assert.equal(app.read('db.products[1].stock'), 4);
@@ -140,6 +141,7 @@ test('voiding a sale restores stock and removes its revenue from totals', () => 
   app.element('saleQty').value = '3';
   app.element('saleRevenue').value = '4500';
   app.element('salePaid').value = '0';
+  app.setFixedPrice(1500);
   app.sandbox.window.saveSale();
 
   assert.equal(app.read('db.products[0].stock'), 7);
@@ -163,6 +165,7 @@ test('new sales record separates revenue from cash received and records partial 
   app.element('saleQty').value = '2';
   app.element('saleRevenue').value = '4000';
   app.element('salePaid').value = '1500';
+  app.setFixedPrice(2000);
   app.element('paymentMethod').value = 'mobile';
   app.sandbox.window.saveSale();
   assert.equal(app.read('db.sales[0].revenue'), 4000);
@@ -182,6 +185,7 @@ test('receiving a partial debt payment reduces outstanding balance without chang
   app.element('saleQty').value = '1';
   app.element('saleRevenue').value = '3000';
   app.element('salePaid').value = '500';
+  app.setFixedPrice(3000);
   app.sandbox.window.saveSale();
   const id = app.read('db.sales[0].id');
   app.sandbox.receivePayment(id);
@@ -225,7 +229,7 @@ test('fully paid and partially paid sales cannot be voided without a refund reco
     app.element('saleRevenue').value = '3000';
     app.element('salePaid').value = scenario.paid;
     app.element('paymentMethod').value = scenario.method;
-    app.setFixedPrice(Number(app.element('saleRevenue').value) / Number(app.element('saleQty').value));
+    app.setFixedPrice(3000);
     app.sandbox.window.saveSale();
     const saleId = app.read('db.sales[0].id');
     app.sandbox.voidSale(saleId);
@@ -274,6 +278,12 @@ test('amount entry buys whole units only and never exceeds entered budget before
   assert.equal(app.read('db.sales[0].qty'), 5);
   assert.equal(app.read('db.sales[0].revenue'), 5500);
   assert.equal(app.read('db.products[0].stock'), 15);
+  app.element('saleBudget').value = '22000';
+  assert.equal(app.read('getSaleQuote().q'), 20);
+  app.sandbox.window.saveSale();
+  assert.equal(app.read('db.sales.length'), 1);
+  assert.equal(app.read('db.products[0].stock'), 15);
+  assert.match(app.alerts.at(-1), /လက်ကျန်အရေအတွက်/);
 });
 
 test('rounded fixed price uses ceiling to 500 and exact multiples remain unchanged', () => {
