@@ -33,7 +33,7 @@ function loadApp(initialStorage = null, confirmResult = false, promptValues = []
   const scripts = html.split('<script>').slice(1).map(part => part.split('</script>')[0]);
   assert.ok(scripts.length >= 2, 'finance extension script must exist');
   for (const item of scripts) vm.runInContext(item, sandbox);
-  return { sandbox, element, alerts, getStored: () => storedValue, read: expression => vm.runInContext(expression, sandbox) };
+  return { sandbox, element, alerts, getStored: () => storedValue, read: expression => vm.runInContext(expression, sandbox), setFixedPrice: value => vm.runInContext('db.settings.fixedUnitPrice = '+Number(value), sandbox) };
 }
 
 test('average unit cost is total capital divided by total quantity', () => {
@@ -60,6 +60,7 @@ test('sale records total revenue, COGS, gross/net profit and deducts stock', () 
   app.element('transport').value = '100';
   app.element('delivery').value = '50';
   app.element('otherExpense').value = '25';
+  app.setFixedPrice(Number(app.element('saleRevenue').value) / Number(app.element('saleQty').value));
   app.sandbox.saveSale();
 
   assert.equal(app.read('db.sales[0].revenue'), 4500);
@@ -224,6 +225,7 @@ test('fully paid and partially paid sales cannot be voided without a refund reco
     app.element('saleRevenue').value = '3000';
     app.element('salePaid').value = scenario.paid;
     app.element('paymentMethod').value = scenario.method;
+    app.setFixedPrice(Number(app.element('saleRevenue').value) / Number(app.element('saleQty').value));
     app.sandbox.saveSale();
     const saleId = app.read('db.sales[0].id');
     app.sandbox.voidSale(saleId);
@@ -234,4 +236,49 @@ test('fully paid and partially paid sales cannot be voided without a refund reco
     assert.equal(app.element('mobileReceived').textContent, scenario.method === 'mobile' ? '1,000 ကျပ်' : '0 ကျပ်');
     assert.match(app.alerts.at(-1), /ငွေလက်ခံထားသော အရောင်း/);
   }
+});
+
+
+test('fixed unit price rounds total revenue upward to the next 500 kyat', () => {
+  const app = loadApp();
+  app.element('pName').value = 'Fixed Price Product';
+  app.element('pCapital').value = '1000';
+  app.element('pStock').value = '20';
+  app.sandbox.addProduct();
+  app.setFixedPrice(1160.1403333333333);
+  app.element('saleProduct').value = 'id-1';
+  app.element('saleInputMode').value = 'quantity';
+  app.element('saleQty').value = '3';
+  assert.equal(app.read('getSaleQuote().raw'), 3480.421);
+  assert.equal(app.read('getSaleQuote().final'), 3500);
+  app.sandbox.saveSale();
+  assert.equal(app.read('db.sales[0].qty'), 3);
+  assert.equal(app.read('db.sales[0].revenue'), 3500);
+});
+
+test('amount entry buys whole units only and never exceeds entered budget before rounding', () => {
+  const app = loadApp();
+  app.element('pName').value = 'Budget Product';
+  app.element('pCapital').value = '1000';
+  app.element('pStock').value = '20';
+  app.sandbox.addProduct();
+  app.setFixedPrice(1100);
+  app.element('saleProduct').value = 'id-1';
+  app.element('saleInputMode').value = 'amount';
+  app.element('saleBudget').value = '5610.74';
+  const quote = app.read('getSaleQuote()');
+  assert.equal(quote.q, 5);
+  assert.equal(quote.raw, 5500);
+  assert.equal(quote.final, 5500);
+  app.sandbox.saveSale();
+  assert.equal(app.read('db.sales[0].qty'), 5);
+  assert.equal(app.read('db.sales[0].revenue'), 5500);
+  assert.equal(app.read('db.products[0].stock'), 15);
+});
+
+test('rounded fixed price uses ceiling to 500 and exact multiples remain unchanged', () => {
+  const app = loadApp();
+  assert.equal(app.read('roundPrice(5610.74)'), 6000);
+  assert.equal(app.read('roundPrice(5500)'), 5500);
+  assert.equal(app.read('roundPrice(5001)'), 5500);
 });
