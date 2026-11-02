@@ -11,7 +11,8 @@ Myanmar-language Android stock, sales, expense and profit manager.
 ## Features
 
 - Multiple products with total purchase capital, total quantity, automatically calculated average unit cost, selling price and stock quantity.
-- Sales entry by sold quantity and total sales revenue, with automatic cost-of-goods and profit calculation using each product's average unit cost.
+- Sales entry using one configurable fixed unit selling price per item. Quantity-based sales use proportional pricing; amount-based sales calculate whole units only (floor), bounded by available stock.
+- Automatically rounds the calculated sale total upward to the next 500 kyat; exact multiples remain unchanged. The rounded total is the recorded revenue and is used for profit, payment and debt calculations.
 - Automatic stock deduction and average-cost inventory valuation.
 - Cancelling an unpaid sale restores the sold quantity; sales with recorded payments cannot be voided directly.
 - Transport, delivery and other expenses are deducted from gross profit to calculate net profit.
