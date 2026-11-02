@@ -165,7 +165,7 @@ test('new sales record separates revenue from cash received and records partial 
   app.element('saleQty').value = '2';
   app.element('saleRevenue').value = '4000';
   app.element('salePaid').value = '1500';
-  app.setFixedPrice(2000);
+  app.setFixedPrice(1900); // Raw 3,800 rounds to 4,000; payment/debt use rounded revenue.
   app.element('paymentMethod').value = 'mobile';
   app.sandbox.window.saveSale();
   assert.equal(app.read('db.sales[0].revenue'), 4000);
@@ -185,7 +185,7 @@ test('receiving a partial debt payment reduces outstanding balance without chang
   app.element('saleQty').value = '1';
   app.element('saleRevenue').value = '3000';
   app.element('salePaid').value = '500';
-  app.setFixedPrice(3000);
+  app.setFixedPrice(2800); // Raw 2,800 rounds to 3,000 before partial debt payment.
   app.sandbox.window.saveSale();
   const id = app.read('db.sales[0].id');
   app.sandbox.receivePayment(id);
