@@ -33,7 +33,7 @@ function loadApp(initialStorage = null, confirmResult = false, promptValues = []
   const scripts = html.split('<script>').slice(1).map(part => part.split('</script>')[0]);
   assert.ok(scripts.length >= 2, 'finance extension script must exist');
   for (const item of scripts) vm.runInContext(item, sandbox);
-  return { sandbox, element, alerts, getStored: () => storedValue, read: expression => vm.runInContext(expression, sandbox) };
+  return { sandbox, element, alerts, getStored: () => storedValue, read: expression => vm.runInContext(expression, sandbox), setFixedPrice: value => vm.runInContext('db.settings.fixedUnitPrice = '+Number(value), sandbox) };
 }
 
 test('average unit cost is total capital divided by total quantity', () => {
@@ -60,7 +60,8 @@ test('sale records total revenue, COGS, gross/net profit and deducts stock', () 
   app.element('transport').value = '100';
   app.element('delivery').value = '50';
   app.element('otherExpense').value = '25';
-  app.sandbox.saveSale();
+  app.setFixedPrice(Number(app.element('saleRevenue').value) / Number(app.element('saleQty').value));
+  app.sandbox.window.saveSale();
 
   assert.equal(app.read('db.sales[0].revenue'), 4500);
   assert.equal(app.read('db.sales[0].cost'), 3000);
@@ -84,7 +85,8 @@ test('each product keeps its own average cost; stock cannot be oversold', () => 
   app.element('saleProduct').value = 'id-2';
   app.element('saleQty').value = '5';
   app.element('saleRevenue').value = '10000';
-  app.sandbox.saveSale();
+  app.setFixedPrice(1500);
+  app.sandbox.window.saveSale();
   assert.equal(app.read('db.sales.length'), 0);
   assert.equal(app.read('db.products[1].stock'), 4);
   assert.ok(app.alerts.length > 0);
@@ -139,7 +141,8 @@ test('voiding a sale restores stock and removes its revenue from totals', () => 
   app.element('saleQty').value = '3';
   app.element('saleRevenue').value = '4500';
   app.element('salePaid').value = '0';
-  app.sandbox.saveSale();
+  app.setFixedPrice(1500);
+  app.sandbox.window.saveSale();
 
   assert.equal(app.read('db.products[0].stock'), 7);
   assert.equal(app.read('db.sales.length'), 1);
@@ -162,8 +165,9 @@ test('new sales record separates revenue from cash received and records partial 
   app.element('saleQty').value = '2';
   app.element('saleRevenue').value = '4000';
   app.element('salePaid').value = '1500';
+  app.setFixedPrice(1900); // Raw 3,800 rounds to 4,000; payment/debt use rounded revenue.
   app.element('paymentMethod').value = 'mobile';
-  app.sandbox.saveSale();
+  app.sandbox.window.saveSale();
   assert.equal(app.read('db.sales[0].revenue'), 4000);
   assert.equal(app.read('db.sales[0].paidAmount'), 1500);
   assert.equal(app.read('db.sales[0].payments[0].method'), 'mobile');
@@ -181,7 +185,8 @@ test('receiving a partial debt payment reduces outstanding balance without chang
   app.element('saleQty').value = '1';
   app.element('saleRevenue').value = '3000';
   app.element('salePaid').value = '500';
-  app.sandbox.saveSale();
+  app.setFixedPrice(2800); // Raw 2,800 rounds to 3,000 before partial debt payment.
+  app.sandbox.window.saveSale();
   const id = app.read('db.sales[0].id');
   app.sandbox.receivePayment(id);
   assert.equal(app.read('db.sales[0].revenue'), 3000);
@@ -224,7 +229,8 @@ test('fully paid and partially paid sales cannot be voided without a refund reco
     app.element('saleRevenue').value = '3000';
     app.element('salePaid').value = scenario.paid;
     app.element('paymentMethod').value = scenario.method;
-    app.sandbox.saveSale();
+    app.setFixedPrice(3000);
+    app.sandbox.window.saveSale();
     const saleId = app.read('db.sales[0].id');
     app.sandbox.voidSale(saleId);
     assert.equal(app.read('db.sales.length'), 1);
@@ -234,4 +240,55 @@ test('fully paid and partially paid sales cannot be voided without a refund reco
     assert.equal(app.element('mobileReceived').textContent, scenario.method === 'mobile' ? '1,000 ကျပ်' : '0 ကျပ်');
     assert.match(app.alerts.at(-1), /ငွေလက်ခံထားသော အရောင်း/);
   }
+});
+
+
+test('fixed unit price rounds total revenue upward to the next 500 kyat', () => {
+  const app = loadApp();
+  app.element('pName').value = 'Fixed Price Product';
+  app.element('pCapital').value = '1000';
+  app.element('pStock').value = '20';
+  app.sandbox.addProduct();
+  app.setFixedPrice(1160.1403333333333);
+  app.element('saleProduct').value = 'id-1';
+  app.element('saleInputMode').value = 'quantity';
+  app.element('saleQty').value = '3';
+  assert.equal(app.read('getSaleQuote().raw'), 3480.421);
+  assert.equal(app.read('getSaleQuote().final'), 3500);
+  app.sandbox.window.saveSale();
+  assert.equal(app.read('db.sales[0].qty'), 3);
+  assert.equal(app.read('db.sales[0].revenue'), 3500);
+});
+
+test('amount entry buys whole units only and never exceeds entered budget before rounding', () => {
+  const app = loadApp();
+  app.element('pName').value = 'Budget Product';
+  app.element('pCapital').value = '1000';
+  app.element('pStock').value = '20';
+  app.sandbox.addProduct();
+  app.setFixedPrice(1100);
+  app.element('saleProduct').value = 'id-1';
+  app.element('saleInputMode').value = 'amount';
+  app.element('saleBudget').value = '5610.74';
+  const quote = app.read('getSaleQuote()');
+  assert.equal(quote.q, 5);
+  assert.equal(quote.raw, 5500);
+  assert.equal(quote.final, 5500);
+  app.sandbox.window.saveSale();
+  assert.equal(app.read('db.sales[0].qty'), 5);
+  assert.equal(app.read('db.sales[0].revenue'), 5500);
+  assert.equal(app.read('db.products[0].stock'), 15);
+  app.element('saleBudget').value = '22000';
+  assert.equal(app.read('getSaleQuote().q'), 20);
+  app.sandbox.window.saveSale();
+  assert.equal(app.read('db.sales.length'), 1);
+  assert.equal(app.read('db.products[0].stock'), 15);
+  assert.match(app.alerts.at(-1), /လက်ကျန်အရေအတွက်/);
+});
+
+test('rounded fixed price uses ceiling to 500 and exact multiples remain unchanged', () => {
+  const app = loadApp();
+  assert.equal(app.read('roundPrice(5610.74)'), 6000);
+  assert.equal(app.read('roundPrice(5500)'), 5500);
+  assert.equal(app.read('roundPrice(5001)'), 5500);
 });
