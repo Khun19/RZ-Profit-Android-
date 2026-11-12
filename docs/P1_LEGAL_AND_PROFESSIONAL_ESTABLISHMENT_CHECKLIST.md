@@ -19,7 +19,7 @@ For each item, record:
 - **Reviewer:** independent reviewer and their relevant qualification/authority.
 - **Next action / due date:** explicit action and target date.
 
-A tick is not a legal conclusion. Mark an item `VERIFIED` only when the underlying evidence has been reviewed and its applicability confirmed. Do not enter invented registration numbers, licences, approvals or professional credentials.
+A tick is not a legal conclusion. Mark an item `VERIFIED` only when the underlying evidence has been reviewed and its applicability confirmed. Do not enter invented registration numbers, licences, approvals or professional credentials.\n\n**Phase numbering note:** P1 in this establishment checklist is the legal/professional workstream in the Master Establishment Blueprint. It is not the same as Phase 1 in the technical Implementation Roadmap (data safety and accounting foundation). The two tracks may be planned in parallel, but client-facing regulated services remain blocked until the relevant legal/professional gates pass. PR #7's ledger contract tests are test specifications only; they do not establish that a production database or double-entry ledger exists.
 
 ## 2. Founder decisions — resolve before selecting a registration route
 
